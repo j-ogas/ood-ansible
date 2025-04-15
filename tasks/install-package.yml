@@ -1,6 +1,14 @@
+- name: "debug major version"
+  debug:
+    var: ansible_distribution_major_version
+
+- name: "debug OS"
+  debug:
+    var: ansible_os_family
+
 - name: Set el_distro when OS is RHEL
   set_fact:
-    el_distro: "el{{ ansible_distribution_major_version }}"
+    el_distro: "el{{ ansible_distribution_major_version | string }}"
   when: ansible_os_family == "RedHat"
 
 - name: Set deb_distro when OS is Debian
