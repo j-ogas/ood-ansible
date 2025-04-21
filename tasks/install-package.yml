@@ -1,12 +1,7 @@
 - name: Set el_distro when OS is RHEL
   set_fact:
-    el_distro: "el{{ ansible_distribution_major_version }}"
+    el_distro: "el8"
   when: ansible_os_family == "RedHat"
-
-- name: Set deb_distro when OS is Debian
-  set_fact:
-    deb_distro: "{{ ansible_distribution_release }}"
-  when: ansible_os_family == "Debian"
 
 - name: Install the rpm repo's key
   ansible.builtin.rpm_key:
@@ -14,30 +9,12 @@
     key: "{{ rpm_repo_key }}"
   when: ansible_os_family == "RedHat"
 
-- name: Install apt repo keys
-  ansible.builtin.apt_key:
-    state: present
-    url: "{{ item.url }}"
-    id: "{{ item.id }}"
-  when: ansible_os_family == "Debian"
-  loop:
-  - { url: "{{ deb_repo_key }}", id: "{{ deb_repo_key_id }}" }
-  - { url: "{{ node_repo_key }}", id: "{{ node_repo_key_id }}" }
-
 - name: Install the rpm repo
   ansible.builtin.package:
     name: "{{ rpm_repo_url }}"
     state: present
     disable_gpg_check: "{{ disable_gpg_check_rpm_repo | bool }}"
   when: ansible_os_family == "RedHat" and not ood_use_existing_repo_file
-
-- name: Install the apt repo
-  ansible.builtin.apt:
-    deb: "{{ apt_repo_url }}"
-    state: present
-    update_cache: "{{ apt_update_cache | bool }}"
-    dpkg_options: 'force-confnew'
-  when: ansible_os_family == "Debian" and not ood_use_existing_repo_file
 
 - name: Enable epel
   ansible.builtin.package:
@@ -84,16 +61,3 @@
     update_cache: true
     exclude: "{{ ondemand_package_excludes | default([]) }}"
   when: ansible_os_family == "RedHat"
-
-- name: Install Open Ondemand (Debian)
-  ansible.builtin.apt:
-    name:  "{{ 'ondemand' if ondemand_package == 'latest' else ondemand_package }}"
-    state: "{{ 'latest' if ondemand_package == 'latest' else 'present' }}"
-    update_cache: true
-  when: ansible_os_family == "Debian"
-
-- name: Install ondemand-dex
-  ansible.builtin.package:
-    name: "{{ 'ondemand-dex' if ondemand_dex_package == 'latest' else ondemand_dex_package }}"
-    state: "{{ 'latest' if ondemand_dex_package == 'latest' else 'present' }}"
-  when: install_ondemand_dex
